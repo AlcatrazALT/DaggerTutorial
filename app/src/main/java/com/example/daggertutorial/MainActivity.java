@@ -11,8 +11,12 @@ import com.example.daggertutorial.interfaces.RandomUsersApi;
 import com.example.daggertutorial.model.RandomUser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.squareup.picasso.OkHttp3Downloader;
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
+
+import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
@@ -23,6 +27,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import timber.log.Timber;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int CACHE_MAX_SIZE = 10 * 1000* 1000;
 
     Retrofit retrofit;
     RecyclerView recyclerView;
@@ -41,6 +46,11 @@ public class MainActivity extends AppCompatActivity {
 
         Timber.plant(new Timber.DebugTree());
 
+        File cacheFile = new File(this.getCacheDir(), "HttpCache");
+        cacheFile.mkdirs();
+
+        Cache cache = new Cache(cacheFile, CACHE_MAX_SIZE);
+
         HttpLoggingInterceptor httpLoggingInterceptor =
                 new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
             @Override
@@ -53,8 +63,12 @@ public class MainActivity extends AppCompatActivity {
 
         OkHttpClient okHttpClient = new OkHttpClient()
                 .newBuilder()
+                .cache(cache)
                 .addInterceptor(httpLoggingInterceptor)
                 .build();
+
+        OkHttp3Downloader okHttp3Downloader = new OkHttp3Downloader(okHttpClient);
+        picasso = new Picasso.Builder(this).downloader(okHttp3Downloader).build();
 
         retrofit = new Retrofit.Builder()
                 .client(okHttpClient)
